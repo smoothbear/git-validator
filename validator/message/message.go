@@ -4,6 +4,8 @@ import (
 	buisError "git-validator/validator/error"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/spf13/viper"
+	"regexp"
 	"time"
 )
 
@@ -33,9 +35,13 @@ func (m MsgSrv) CheckMessage() error {
 	}
 
 	err = cIter.ForEach(func(commit *object.Commit) error {
-		print(commit.Message)
+		result, err := regexp.Match(viper.GetString("regex"), []byte(commit.Message))
+		if err != nil || !result {
+			return buisError.WrapError("Commit pattern is not matched.")
+		}
+
 		return nil
 	})
 
-	return nil
+	return err
 }
