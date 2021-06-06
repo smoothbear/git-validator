@@ -19,7 +19,7 @@ func main() {
 	// If it is empty value, running by default environment
 	if viper.GetString("regex") == "" {
 		// Example: [ADD] Initial Commit
-		viper.Set("regex", "(?i)([+[A-Z])+\\w+]")
+		viper.Set("regex", "([+[A-Z])+\\w+]")
 	}
 
 	repository, err := git.PlainOpen(".")
