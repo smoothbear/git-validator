@@ -1,7 +1,7 @@
 package message
 
 import (
-	buisError "git-validator/validator/error"
+	bisError "git-validator/validator/error"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/spf13/viper"
@@ -24,20 +24,24 @@ func NewMessageService(repository *git.Repository) Service {
 func (m MsgSrv) CheckMessage() error {
 	ref, err := m.r.Head()
 	if err != nil {
-		return buisError.WrapError("Could not get HEAD.")
+		return bisError.WrapError("Could not get HEAD.")
 	}
 
 	logTime := time.Now().Add(-30 * time.Second)
 	cIter, err := m.r.Log(&git.LogOptions{From: ref.Hash(), Since: &logTime})
 
 	if err != nil {
-		return buisError.WrapError("Could not get log.")
+		return bisError.WrapError("Could not get log.")
 	}
 
 	err = cIter.ForEach(func(commit *object.Commit) error {
 		result, err := regexp.Match(viper.GetString("regex"), []byte(commit.Message))
-		if err != nil || !result {
-			return buisError.WrapError("Commit pattern is not matched.")
+		if err != nil {
+			return bisError.WrapError("Commit regex is not valid.")
+		}
+
+		if result == false {
+			return bisError.WrapError("Commit pattern is not matched.")
 		}
 
 		return nil
