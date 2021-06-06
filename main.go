@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
 	validationError "git-validator/validator/error"
 	"git-validator/validator/message"
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/spf13/viper"
 	"log"
 )
@@ -16,11 +14,7 @@ func main() {
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
 
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileAlreadyExistsError); ok {
-			log.Fatalf("Error read configuration file.")
-		}
-	}
+	_ = viper.ReadInConfig()
 
 	// If it is empty value, running by default environment
 	if viper.GetString("regex") == "" {
@@ -28,29 +22,18 @@ func main() {
 		viper.Set("regex", "(?i)([+[A-Z])+\\w+]")
 	}
 
-	println(viper.GetString("regex"))
-
 	repository, err := git.PlainOpen(".")
 	checkIfErr(err)
 
-	ref, err := repository.Head()
-	checkIfErr(err)
-
-	cIter, err := repository.Log(&git.LogOptions{From: ref.Hash()})
-	checkIfErr(err)
-
-	err = cIter.ForEach(func(c *object.Commit) error {
-		fmt.Println(c)
-		return nil
-	})
-
-	msgSrv := message.NewMessageService()
+	msgSrv := message.NewMessageService(repository)
 
 	switch err := msgSrv.CheckMessage(); err.(type) {
 	case validationError.ValidationError:
-		log.Fatalf(err.(validationError.ValidationError).GetMessage())
+		log.Fatalf("❌  Failed: %s", err.(validationError.ValidationError).GetMessage())
+	case nil:
+		log.Print("✅  Git validation is successfully completed!")
 	default:
-		log.Print("Git validation is successfully completed!")
+		log.Fatalf("❌  Failed: %v", err)
 	}
 }
 
